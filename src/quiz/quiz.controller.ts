@@ -16,4 +16,9 @@ export class QuizController {
   getQuizzes() {
     return this.quizService.getQuizzes();
   }
+
+  @Get(':id')
+  getQuizById(id: string) {
+    return this.quizService.getQuizById(id);
+  }
 }

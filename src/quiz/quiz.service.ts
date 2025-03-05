@@ -23,4 +23,8 @@ export class QuizService {
   getQuizzes() {
     return this.quizzes;
   }
+
+  getQuizById(id: string) {
+    return this.quizzes.find((quiz) => quiz.id === id);
+  }
 }
