@@ -8,10 +8,11 @@ export class QuizService {
   private quizzes: Quiz[] = [];
 
   createQuiz(data: CreateQuizDto) {
-    const newQuiz = {
+    const newQuiz: Quiz = {
       id: uuidv4(),
       ...data,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     this.quizzes.push(newQuiz); // 🔥 이제 오류 없음

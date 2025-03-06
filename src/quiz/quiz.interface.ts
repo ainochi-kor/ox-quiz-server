@@ -5,4 +5,5 @@ export interface Quiz {
   title: string;
   quizzes: QuestionDto[];
   createdAt: string;
+  updatedAt: string;
 }
