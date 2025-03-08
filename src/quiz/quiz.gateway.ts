@@ -15,6 +15,7 @@ import { Quiz } from './quiz.interface';
 interface Player {
   id: string;
   position: 'O' | 'X';
+  nickname?: string;
   characterImageId?: string;
 }
 
@@ -98,18 +99,22 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /** 참가자 입장 */
   @SubscribeMessage('joinGame')
   handleJoinGame(
-    @MessageBody() data: { userId: string },
+    @MessageBody()
+    data: { id: string; nickname: string; characterImageId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    console.log('joinGame', data.userId);
+    console.log('joinGame', data);
 
-    if (this.gameStarted && !this.players[data.userId]) {
+    if (this.gameStarted && !this.players[data.id]) {
       client.emit('error', { message: '이미 시작된 게임입니다.' });
       client.disconnect();
       return;
     }
 
-    this.players[data.userId] = { id: data.userId, position: 'O' };
+    this.players[data.id] = {
+      ...data,
+      position: 'O',
+    };
     console.log('this.players', this.players);
     this.server.emit('updatePlayers', this.players);
   }
@@ -177,13 +182,12 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /** 유저 답변 제출 */
   @SubscribeMessage('submitAnswer')
-  handleSubmitAnswer(
-    @MessageBody() data: { userId: string; position: 'O' | 'X' },
-  ) {
-    console.log('submitAnswer', data.userId, data.position);
-    this.answerMap[data.userId] = data.position === 'O';
+  handleSubmitAnswer(@MessageBody() data: { id: string; position: 'O' | 'X' }) {
+    this.answerMap[data.id] = data.position === 'O';
+    this.players[data.id].position = data.position;
+
     this.server.emit('moveUser', {
-      [data.userId]: this.answerMap[data.userId],
+      [data.id]: this.players[data.id],
     });
   }
 
