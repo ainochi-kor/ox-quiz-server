@@ -119,6 +119,25 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit('updatePlayers', this.players);
   }
 
+  /** 이미지 수정 */
+  @SubscribeMessage('changeImage')
+  handleChangeImage(
+    @MessageBody()
+    data: {
+      id: string;
+      characterImageId: string;
+    },
+  ) {
+    console.log('changeImage', data);
+
+    this.players[data.id] = {
+      ...this.players[data.id],
+      characterImageId: data.characterImageId,
+    };
+    console.log('this.players', this.players);
+    this.server.emit('changeImage', this.players);
+  }
+
   /** 문제 출제 */
   startNextQuestion() {
     console.log('startNextQuestion', this.currentQuestionIndex);
