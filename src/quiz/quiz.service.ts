@@ -28,4 +28,34 @@ export class QuizService {
   getQuizById(id: string) {
     return this.quizzes.find((quiz) => quiz.id === id);
   }
+
+  getQuizRoom(id: string) {
+    const quiz = this.quizzes.find((quiz) => quiz.id === id);
+
+    if (!quiz) {
+      throw new Error('Quiz not found');
+    }
+
+    return {
+      id: quiz.id,
+      title: quiz.title,
+      createdAt: quiz.createdAt,
+      updatedAt: quiz.updatedAt,
+    };
+  }
+
+  getQuizRoomList() {
+    console.log('getQuizRoomList');
+    const quizRoomList = this.quizzes.map((quiz) => {
+      return {
+        id: quiz.id,
+        title: quiz.title,
+        createdAt: quiz.createdAt,
+        updatedAt: quiz.updatedAt,
+      };
+    });
+
+    console.log(quizRoomList);
+    return quizRoomList;
+  }
 }

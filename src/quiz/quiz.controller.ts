@@ -17,9 +17,17 @@ export class QuizController {
     return this.quizService.getQuizzes();
   }
 
+  @Get('/roomlist')
+  getQuizRoomList() {
+    return this.quizService.getQuizRoomList();
+  }
+  @Get('/roomlist/:id')
+  getQuizRoom(@Param('id') id: string) {
+    return this.quizService.getQuizRoom(id);
+  }
+
   @Get(':id')
   getQuizById(@Param('id') id: string) {
-    console.log('Controller getQuizById', id);
     return this.quizService.getQuizById(id);
   }
 }
