@@ -15,12 +15,20 @@ import { GAME_RESULT_STATUS } from 'src/constants/game';
 
 interface Player {
   id: string;
-  position: 'O' | 'X';
+  position: boolean;
   nickname?: string;
   characterImageId?: string;
 }
 
 type AnswerMap = Record<string, boolean>;
+
+interface QuizData {
+  questionIndex: number;
+  question: string;
+  description: string;
+  image: string | undefined;
+  timeLeft: number;
+}
 
 @Injectable()
 @WebSocketGateway({
@@ -125,7 +133,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.players[data.id] = {
       ...data,
-      position: 'O',
+      position: true,
     };
     this.socketIdToUserId.set(data.id, client.id);
     console.log('this.players', this.players);
@@ -191,7 +199,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.answerMap = Object.keys(this.players).reduce(
       (obj: AnswerMap, playerId: string) => {
-        obj[playerId] = this.players[playerId].position === 'O';
+        obj[playerId] = this.players[playerId].position;
         return obj;
       },
       {} as AnswerMap,
@@ -203,23 +211,26 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
       question: question.title,
       description: question.description,
       image: question.image,
-    });
+      timeLeft: this.timeLeft,
+    } satisfies QuizData);
 
     this.questionTimer = setInterval(() => {
       if (this.timeLeft > 0) {
         this.timeLeft--;
         console.log('timeLeft', this.timeLeft);
-        const currentQuestion = {
+        this.server.emit('currentQuestion', {
           questionIndex: this.currentQuestionIndex,
           question: question.title,
           description: question.description,
           image: question.image,
           timeLeft: this.timeLeft,
-        };
-        this.server.emit('currentQuestion', currentQuestion);
+        } satisfies QuizData);
       } else {
         this.stopTimer();
-        this.checkAnswers();
+        this.server.emit('waitingQuizResult', {});
+        setTimeout(() => {
+          this.checkAnswers();
+        }, 1000);
       }
     }, 1000);
   }
@@ -235,8 +246,8 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /** 유저 답변 제출 */
   @SubscribeMessage('submitAnswer')
-  handleSubmitAnswer(@MessageBody() data: { id: string; position: 'O' | 'X' }) {
-    this.answerMap[data.id] = data.position === 'O';
+  handleSubmitAnswer(@MessageBody() data: { id: string; position: boolean }) {
+    this.answerMap[data.id] = data.position;
     this.players[data.id].position = data.position;
 
     this.server.emit('moveUser', {
@@ -292,13 +303,18 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
           state: GAME_RESULT_STATUS.WIN,
           message: '승리하였습니다!',
         });
-
+        this.resetGame(); // 게임 상태 리셋
         this.server.to(winnerSocketId).disconnectSockets(true);
       }
     }
 
-    this.currentQuestionIndex++;
-    this.startNextQuestion();
+    setTimeout(() => {
+      this.server.emit('waitingQuizNext', {});
+      setTimeout(() => {
+        this.currentQuestionIndex++;
+        this.startNextQuestion();
+      }, 3000);
+    }, 1000);
   }
 
   /** 게임 상태 리셋 */
